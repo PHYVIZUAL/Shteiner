@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Теорема Штейнера - Визуализация</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(52, 152, 219, 0.3);
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 200px;
+        }
+        
+        label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+        
+        select, input[type="range"] {
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            font-size: 16px;
+            min-width: 150px;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            height: 8px;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            outline: none;
+        }
+        
+        .distance-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-top: 5px;
+        }
+        
+        .mass-info {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        
+        .mass-info .mass-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .mass-info .mass-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .visualization {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-container {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .canvas-title {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .physics-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        
+        .info-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .info-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .explanation {
+            margin-top: 40px;
+            padding: 30px;
+            background: rgba(236, 240, 241, 0.8);
+            border-radius: 15px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .explanation h2 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .explanation h3 {
+            color: #34495e;
+            font-size: 1.4em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .formula {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.3em;
+            text-align: center;
+            margin: 15px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .visualization {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .physics-info {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Теорема Штейнера</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Выберите тело:</label>
+                <select id="shapeSelect">
+                    <option value="rod">Стержень</option>
+                    <option value="disk">Диск</option>
+                    <option value="sphere">Сфера</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Расстояние от оси (м):</label>
+                <input type="range" id="distanceSlider" min="0" max="100" value="0" step="1">
+                <div class="distance-value" id="distanceValue">0 м</div>
+            </div>
+        </div>
+        
+        <div class="mass-info">
+            <div class="mass-title">Масса всех тел</div>
+            <div class="mass-value">1.0 кг</div>
+        </div>
+        
+        <div class="visualization">
+            <div class="canvas-container">
+                <div class="canvas-title">Ось через центр масс (d = 0)</div>
+                <canvas id="canvas1" width="400" height="400"></canvas>
+            </div>
+            
+            <div class="canvas-container">
+                <div class="canvas-title">Параллельная ось (d > 0)</div>
+                <canvas id="canvas2" width="400" height="400"></canvas>
+            </div>
+        </div>
+        
+        <div class="physics-info">
+            <div class="info-box">
+                <div class="info-title">I₀ (центральная ось)</div>
+                <div class="info-value" id="I0Value">0.33 кг·м²</div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">I (параллельная ось)</div>
+                <div class="info-value" id="IValue">0.33 кг·м²</div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">Угловая скорость ω₁</div>
+                <div class="info-value" id="omega1Value">3.0 рад/с</div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">Угловая скорость ω₂</div>
+                <div class="info-value" id="omega2Value">3.0 рад/с</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container explanation">
+        <h2>Что такое Теорема Штейнера?</h2>
+        
+        <p><strong>Теорема Штейнера </strong> — это теорема в механике, которая связывает момент инерции тела относительно произвольной оси с моментом инерции относительно параллельной оси, проходящей через центр масс.</p>
+        
+        <h3>Формула:</h3>
+        <div class="formula">
+            I = I₀ + md²
+        </div>
+        
+        <p>где:</p>
+        <ul>
+            <li><span class="highlight">I</span> — момент инерции относительно новой оси</li>
+            <li><span class="highlight">I₀</span> — момент инерции относительно оси через центр масс</li>
+            <li><span class="highlight">m</span> — масса тела</li>
+            <li><span class="highlight">d</span> — расстояние между осями</li>
+        </ul>
+        
+        <h3>Как работает эта визуализация:</h3>
+        <ul>
+            <li><strong>Левая сторона:</strong> показывает тело, вращающееся вокруг оси через центр масс (d = 0)</li>
+            <li><strong>Правая сторона:</strong> показывает то же тело, вращающееся вокруг параллельной оси</li>
+            <li><strong>Движение по орбите:</strong> тело движется по орбите вокруг центральной оси без вращения на месте</li>
+            <li><strong>Ползунок:</strong> изменяет расстояние d от 0 до 100 метров</li>
+            <li><strong>Масса всех тел:</strong> 1 кг</li>
+        </ul>
+        
+        <h3>Физический смысл:</h3>
+        <p><strong>Чем дальше тело от оси вращения, тем больше его момент инерции. Это объясняет, почему легче нести длинную палку, держа её за середину.</strong></p>
+        
+        <h3>Значения I₀ для разных тел:</h3>
+        <ul>
+            <li><strong>Стержень:</strong> I₀ = (1/12)mL² — ось перпендикулярна через центр</li>
+            <li><strong>Диск:</strong> I₀ = (1/2)mR² — ось через центр, перпендикулярно плоскости</li>
+            <li><strong>Сфера:</strong> I₀ = (2/5)mR² — любая ось через центр</li>
+        </ul>
+    </div>
+
+    <script>
+        // Физические параметры
+        const MASS = 1.0; // кг
+        const L_CONST = 1.0; // постоянный момент импульса
+        
+        // Размеры тел
+        const ROD_LENGTH = 2.0;
+        const DISK_RADIUS = 1.0;
+        const SPHERE_RADIUS = 1.0;
+        
+        // Переменные состояния
+        let currentShape = 'rod';
+        let distance = 0;
+        let currentDistance = 0; // Плавность переходов
+        
+        // Three.js сцены
+        let scene1, scene2, camera1, camera2, renderer1, renderer2;
+        let object1, object2, axis1, axis2;
+        let trailPoints = []; // след орбиты
+        let trailLine;
+        let animationId;
+        
+        // Инициализация
+        function init() {
+            setupScenes();
+            createObjects();
+            setupEventListeners();
+            animate();
+        }
+        
+        function setupScenes() {
+            // Сцена 1 (центральная ось)
+            scene1 = new THREE.Scene();
+            scene1.background = new THREE.Color(0x0a0a0a);
+            camera1 = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            camera1.position.set(0, 2, 6);
+            camera1.lookAt(0, 0, 0);
+            
+            renderer1 = new THREE.WebGLRenderer({
+                canvas: document.getElementById('canvas1'),
+                antialias: true
+            });
+            renderer1.setSize(400, 400);
+            renderer1.shadowMap.enabled = true;
+            renderer1.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // Сцена 2 (параллельная ось)
+            scene2 = new THREE.Scene();
+            scene2.background = new THREE.Color(0x0a0a0a);
+            camera2 = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            camera2.position.set(2, 2, 6);
+            camera2.lookAt(1.5, 0, 0);
+            
+            renderer2 = new THREE.WebGLRenderer({
+                canvas: document.getElementById('canvas2'),
+                antialias: true
+            });
+            renderer2.setSize(400, 400);
+            renderer2.shadowMap.enabled = true;
+            renderer2.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // освещение
+            [scene1, scene2].forEach((scene, index) => {
+                // Основное освещение
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+                scene.add(ambientLight);
+                
+                // Направленный свет с тенями
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 5, 5);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 2048;
+                directionalLight.shadow.mapSize.height = 2048;
+                scene.add(directionalLight);
+                
+                // Дополнительный свет 
+                const pointLight = new THREE.PointLight(0x3498db, 0.5, 100);
+                pointLight.position.set(-5, 3, 2);
+                scene.add(pointLight);
+                
+                //  сетка-пол 
+                const gridHelper = new THREE.GridHelper(10, 20, 0x444444, 0x222222);
+                gridHelper.position.y = -2;
+                scene.add(gridHelper);
+            });
+        }
+        
+        function createObjects() {
+            // Очистка предыдущих объектов
+            if (object1) {
+                scene1.remove(object1);
+                scene2.remove(object2);
+                scene1.remove(axis1);
+                scene2.remove(axis2);
+                if (trailLine) {
+                    scene2.remove(trailLine);
+                }
+            }
+            
+            // Создание нового объекта
+            let material, geometry;
+            
+            switch(currentShape) {
+                case 'rod':
+                    geometry = new THREE.CylinderGeometry(0.08, 0.08, ROD_LENGTH, 16);
+                    // Материал с полосками 
+                    material = new THREE.MeshPhongMaterial({
+                        color: 0x3498db,
+                        shininess: 100,
+                        specular: 0x111111
+                    });
+                    break;
+                case 'disk':
+                    geometry = new THREE.CylinderGeometry(DISK_RADIUS, DISK_RADIUS, 0.15, 32);
+                    //  текстура
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256;
+                    canvas.height = 256;
+                    const context = canvas.getContext('2d');
+                    
+                    // Рисуем радиальные линии на диске
+                    context.fillStyle = '#3498db';
+                    context.fillRect(0, 0, 256, 256);
+                    context.strokeStyle = '#2c3e50';
+                    context.lineWidth = 4;
+                    
+                    const centerX = 128, centerY = 128;
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        context.beginPath();
+                        context.moveTo(centerX, centerY);
+                        context.lineTo(
+                            centerX + Math.cos(angle) * 120,
+                            centerY + Math.sin(angle) * 120
+                        );
+                        context.stroke();
+                    }
+                    
+                    const texture = new THREE.CanvasTexture(canvas);
+                    material = new THREE.MeshPhongMaterial({
+                        map: texture,
+                        shininess: 100,
+                        specular: 0x111111
+                    });
+                    break;
+                case 'sphere':
+                    geometry = new THREE.SphereGeometry(SPHERE_RADIUS, 32, 16);
+                    //  текстура с полосами для сферы
+                    const sphereCanvas = document.createElement('canvas');
+                    sphereCanvas.width = 256;
+                    sphereCanvas.height = 128;
+                    const sphereContext = sphereCanvas.getContext('2d');
+                    
+                    //  горизонтальные полосы
+                    sphereContext.fillStyle = '#3498db';
+                    sphereContext.fillRect(0, 0, 256, 128);
+                    sphereContext.fillStyle = '#2c3e50';
+                    
+                    for (let i = 0; i < 8; i++) {
+                        if (i % 2 === 0) {
+                            sphereContext.fillRect(0, i * 16, 256, 16);
+                        }
+                    }
+                    
+                    const sphereTexture = new THREE.CanvasTexture(sphereCanvas);
+                    material = new THREE.MeshPhongMaterial({
+                        map: sphereTexture,
+                        shininess: 100,
+                        specular: 0x111111
+                    });
+                    break;
+            }
+            
+            object1 = new THREE.Mesh(geometry, material);
+            object2 = new THREE.Mesh(geometry, material.clone());
+            
+            // Включаем тени
+            object1.castShadow = true;
+            object1.receiveShadow = true;
+            object2.castShadow = true;
+            object2.receiveShadow = true;
+            
+            // Позиционирование объектов
+            object1.position.set(0, 0, 0);
+            object2.position.set(0, 0, 0);
+            
+            scene1.add(object1);
+            scene2.add(object2);
+            
+            // Создание осей вращения
+            createAxes();
+            
+            // Создание следа орбиты
+            createTrail();
+            
+            updatePhysicsDisplay();
+        }
+        
+        function createAxes() {
+            const axisGeometry = new THREE.CylinderGeometry(0.03, 0.03, 8, 16);
+
+            const axisMaterial = new THREE.MeshBasicMaterial({
+                color: 0xe74c3c,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            axis1 = new THREE.Mesh(axisGeometry, axisMaterial);
+            axis2 = new THREE.Mesh(axisGeometry, axisMaterial);
+            
+
+            axis1.castShadow = false;
+            axis1.receiveShadow = false;
+            axis2.castShadow = false;
+            axis2.receiveShadow = false;
+            
+            axis1.position.set(0, 0, 0);
+            axis2.position.set(0, 0, 0);
+            
+            scene1.add(axis1);
+            scene2.add(axis2);
+        }
+        
+        function createTrail() {
+            trailPoints = [];
+            const trailGeometry = new THREE.BufferGeometry();
+            const trailMaterial = new THREE.LineBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0.6,
+                linewidth: 2
+            });
+            
+            trailLine = new THREE.Line(trailGeometry, trailMaterial);
+            scene2.add(trailLine);
+        }
+        
+        function updateTrail(position) {
+            if (distance > 0) {
+                trailPoints.push(position.clone());
+                
+
+                if (trailPoints.length > 100) {
+                    trailPoints.shift();
+                }
+                
+
+                const positions = new Float32Array(trailPoints.length * 3);
+                for (let i = 0; i < trailPoints.length; i++) {
+                    positions[i * 3] = trailPoints[i].x;
+                    positions[i * 3 + 1] = trailPoints[i].y;
+                    positions[i * 3 + 2] = trailPoints[i].z;
+                }
+                
+                trailLine.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                trailLine.geometry.attributes.position.needsUpdate = true;
+            } else {
+
+                trailPoints = [];
+                trailLine.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(0), 3));
+            }
+        }
+        
+        function calculateI0() {
+            switch(currentShape) {
+                case 'rod':
+                    return (MASS * ROD_LENGTH * ROD_LENGTH) / 12;
+                case 'disk':
+                    return 0.5 * MASS * DISK_RADIUS * DISK_RADIUS;
+                case 'sphere':
+                    return (2/5) * MASS * SPHERE_RADIUS * SPHERE_RADIUS;
+                default:
+                    return 1;
+            }
+        }
+        
+        function calculateI() {
+            const I0 = calculateI0();
+            return I0 + MASS * currentDistance * currentDistance;
+        }
+        
+        function updatePhysicsDisplay() {
+            const I0 = calculateI0();
+            const I = calculateI();
+            const omega1 = L_CONST / Math.max(I0, 0.001);
+            const omega2 = L_CONST / Math.max(I, 0.001);
+            
+            document.getElementById('I0Value').textContent = I0.toFixed(3) + ' кг·м²';
+            document.getElementById('IValue').textContent = I.toFixed(3) + ' кг·м²';
+            document.getElementById('omega1Value').textContent = omega1.toFixed(2) + ' рад/с';
+            document.getElementById('omega2Value').textContent = omega2.toFixed(6) + ' рад/с';
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('shapeSelect').addEventListener('change', (e) => {
+                currentShape = e.target.value;
+                createObjects();
+            });
+            
+            document.getElementById('distanceSlider').addEventListener('input', (e) => {
+                distance = parseFloat(e.target.value);
+                document.getElementById('distanceValue').textContent = distance + ' м';
+            });
+        }
+        
+        function animate() {
+
+            const lerpFactor = 0.05;
+            currentDistance += (distance - currentDistance) * lerpFactor;
+            
+            const I0 = calculateI0();
+            const I = calculateI();
+            const omega1 = L_CONST / Math.max(I0, 0.001);
+            const omega2 = L_CONST / Math.max(I, 0.001);
+            
+            const time = Date.now() * 0.004;
+            
+
+            if (object1) {
+
+                object1.rotation.y = time * omega1;
+
+                object1.rotation.x = 0;
+                object1.rotation.z = 0;
+            }
+            
+            if (object2) {
+
+                const visualDistance = (currentDistance / 100) * 3;
+                const orbitalSpeed = Math.max(omega2 * 0.5, 0.2);
+                
+                if (currentDistance < 0.01) {
+
+                    object2.position.x = 0;
+                    object2.position.z = 0;
+                    object2.position.y = 0;
+                    object2.rotation.y = time * omega2;
+                } else {
+
+                    const angle = time * orbitalSpeed;
+                    object2.position.x = Math.cos(angle) * visualDistance;
+                    object2.position.z = Math.sin(angle) * visualDistance;
+                    object2.position.y = 0;
+                    
+
+                    object2.rotation.y = 0;
+                    object2.rotation.x = 0;
+                    object2.rotation.z = 0;
+                }
+                
+                // Обновляем след орбиты
+                updateTrail(object2.position);
+            }
+            
+            // Обновляем физические параметры
+            updatePhysicsDisplay();
+            
+            // вращение камеры для динамичности (замедленное)
+            if (camera2) {
+                const cameraAngle = time * 0.1;
+                const radius = 7;
+                camera2.position.x = Math.cos(cameraAngle) * radius;
+                camera2.position.z = Math.sin(cameraAngle) * radius;
+                camera2.lookAt(currentDistance > 0 ? object2.position : new THREE.Vector3(0, 0, 0));
+            }
+            
+            // Рендеринг
+            renderer1.render(scene1, camera1);
+            renderer2.render(scene2, camera2);
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Запуск после загрузки страницы
+        window.addEventListener('load', init);
+        
+        // Обработка изменения размера окна
+        window.addEventListener('resize', () => {
+            camera1.aspect = 1;
+            camera1.updateProjectionMatrix();
+            camera2.aspect = 1;
+            camera2.updateProjectionMatrix();
+            
+            renderer1.setSize(400, 400);
+            renderer2.setSize(400, 400);
+        });
+        
+        // Пауза анимации при скрытии вкладки 
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            } else {
+                animate();
+            }
+        });
+    </script>
+</body>
+</html>
